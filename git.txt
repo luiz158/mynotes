@@ -27,6 +27,32 @@ git diff - показывает разницу между рабочим деревом и индексом. По-сути показыва
 git diff --cached [<commit>] - показывает разницу между индексом и коммитом <commit>. По-умолчанию производит
 сравнение с HEAD.
 
+git diff commit покажет разницу между индексом + рабочая копия и коммитом
+
+git diff commit --cached покажет разницу между индексом и коммитом.
+
+git diff commit-old commit-new покажет изменения между коммитом commit-new и commit-old, если переставить коммиты местами,
+                               то покажет как придти от commit-new к commit-old.
+
+git diff branch - показывает разницу между рабочей копией + индекс и веткой, т.е. что будет если слить рабочую копию 
+                  в указанную ветку.
+
+git diff branch --cached - показывает разницу между индексом и веткой.
+
+git diff HEAD branch - показывает разницу между последним коммитом и указанной веткой, т.е. что будет, если слить
+                       последний коммит в указанную ветку.
+
+git diff ... > mydiff - выводит информацию в файл.
+
+Патчи
+-----
+
+- Снять патч:
+
+$ git diff ... > mypatch.patch
+
+
+
 Ветки
 -----
 
@@ -216,7 +242,7 @@ $ git branch --set-upstream v0 pavel/v0
 $ git branch -u upstream/foo
 (выполняется из того бранча, который мы хотим заставить трекать)
 От git checkout -b branch --track ... данные команды отличаются тем, что их можно использовать когда бранчи
-уже были созданы.
+уже были созданы. (В 1.7 данный аргумент "-u" был у комманд push и pull).
 
 ------------
 
@@ -272,6 +298,16 @@ $ git checkout -b mybranch
 Коммит с picked-cherry
 ----------------------
 
+
+Немного про push
+----------------
+
+У команды push есть еще и такой синтаксис:
+
+$ git push <repo-nick> <to-branch>:<from-branch>
+
+Позволяет залить изменения из указанной ветки from-branch, не переходя в нее.
+
 Откатить коммит
 ---------------
 
@@ -300,13 +336,15 @@ git reset HEAD~1, то в unstaged вытягиваются все файлы, измененные в предыдущем 
 git reset --soft отличается от git reset тем, что выталкивает файл из коммита в stage, в то время как git reset выталкивает
 файл и из коммита, и из stage, при этом ORIG_HEAD и операции с ним так же доступны).
 
+Окатываются коммиты по указанный ИСКЛЮЧИТЕЛЬНО (т.е. git reset --hard HEAD не сделает ничего)
+
 Reset при слиянии
 
 Если в процессе разрешения вы передумали разрешать
 конфликт, достаточно набрать:
 
 git reset --hard HEAD - это вернет обе ветки в исходные состояния.
-
+    
 
 Если же коммит слияния был совершен, используем команду:
 
@@ -316,9 +354,27 @@ git reset --hard ORIG_HEAD
 
 Пуш после отката коммита:
 
+Если из локального репозитория удалить коммит, а затем попытаться сделать push, то будет выведено следующее сообщение:
 
+$ git push
+To C:\Work\AT\gitdemo\origin\project\.git
+ ! [rejected]        branch3 -> branch3 (non-fast-forward)
+error: failed to push some refs to 'C:\Work\AT\gitdemo\origin\project\.git'
+To prevent you from losing history, non-fast-forward updates were rejected
+Merge the remote changes (e.g. 'git pull') before pushing again.  See the
+'Note about fast-forwards' section of 'git push --help' for details.
+
+Если сделать git pull, то коммит вернется.
+
+Чтобы все-таки сделать коммит, нужно запускать push с флагом -f, но нужно быть предельно осторожным,
+т.к. можно потерять коммиты.
+
+$ git push -f
 
 $ git revert - отмена изменений, внесенных в прошлом отдельным коммитом.
+Радикальное отличие от git reset в том, что git reset удаляет все дерево до указанного комита,
+а git revert делает слияние того, что было в репозитории ДО УКАЗАННОГО КОММИТА исключительно и HEAD репозитория.
+
 Отличия от git reset в том, что можно откатить изменения, внесенные каким-либо коммитом посередине.
 По-умолчанию изменения из средины уничтожаются, происходит мержинг и автоматически новый коммит с комментарием
 
@@ -329,6 +385,16 @@ This reverts commit 3d4f154900af952cc70969a9369af4220da3ce08.
 
 Вообще при выполнении реверта всплывает редактор, так же можно использовать ключ -e (хотя под Windows редактор всплывает
 и без данного ключа).
+
+Пример, в репозитории 3 файла, каждый из которых закоммичен своим коммитом:
+1 sha1
+2 sha2
+3 sha3
+
+Если сделать git revert sha2, то в репозитории останутся только файлы:
+
+1
+3
 
 Если запустить
 
@@ -353,8 +419,7 @@ $ git add <file>
 
 а затем коммит.
 
-Важно! Нельзя откатывать корневой коммит. Да и вообще по большому счету безопасно можно откатить только верхний коммит
-в дереве.
+Важно! Нельзя откатывать корневой коммит.
 
 Еще есть git checkout -b someNewBranchName shaYouDestroyed - создать бранч и зачекаутиться.
 
@@ -578,15 +643,6 @@ git pull origin master
 git merge remotes/your-nick/MY-SUPER-FEATURE --no-ff
 git push origin master:master
 
-Про -ff: --ff 
-When the merge resolves as a fast-forward, only update the branch pointer, without creating a merge commit. This is the 
-default behavior.
- --no-ff 
-Create a merge commit even when the merge resolves as a fast-forward. 
---ff-only 
-Refuse to merge and exit with a non-zero status unless the current HEAD is already up-to-date or the merge can be 
-resolved as a fast-forward.
-
 --------------------------------------
 
 git под Windows
@@ -607,9 +663,6 @@ pager = iconv.exe -f cp1251 -t utf-8 | less
 
 (нужно поставить iconv, подробнее см. http://habrahabr.ru/post/74839/)
 
-
-Перемотка (fast-forward)
-------------------------
 
 Проблемы слияния (merge)
 ------------------------
@@ -648,4 +701,70 @@ $git pull pavel v0 (из ветки v0 в ветку branch3!!!)
 Думаю, что данное поведение как-то коррелирует с fast-forward, по крайней мере, если затем, после мержинга в мою ветку
 внести изменения, закоммитить, а потом попробовать ее смержить с уже известной ей удаленной - так же происходит конфликт.
 Дерево разрывается и нужно снова мержить вручную.
+
+Fast-forward слияние (перемотка)
+--------------------------------
+
+Если происходит слияние в ветку из HEAD которой прямо достижимы сливаемые коммиты (т.е. было сделано так:
+
+$ git branch
+* master
+
+$ git checkout -b newbranch
+
+...
+
+$ git commit -am "commit 1"
+
+...
+
+$ git commit -am "commit 2"
+
+$ git checkout master
+
+$ git merge newbranch
+
+т.е так:
+
+---A---------------- обратно на A  --- master
+    ---- B --- C                       newbranch
+
+т.е. коммит, на котором мы находимся в ветке master перед слиянием является родителем первого сливаемого коммита в ветке
+newbranch. В данном случае git просто сдвигает указатель вперед в ветке master, т.к. у нас нет расходящихся изменений,
+которые действительно следовало бы сливать.
+
+$ git log --graph --oneline
+
+* ca62712 C
+* 99c3809 B
+* a1a011d A
+* f65377d 1
+* bab4abf initial commit
+
+У команды merge есть режимы
+ - --ff включен по-умолчанию - разрешить fast forward
+ - --no-ff - запретить fast forward, применяется в случае, если мы хотим явно выделить слияние, чтобы видеть,
+             где закончилась разработка той или иной фичи.
+ - --ff-only - разрешает слияние только если все изменения из ветки и так уже применены или слияние возможно в ff-режиме.
+               В противном случае генерирует ошибку.
+
+Слияние в режиме --no-ff (граф коммитов перед слиянием тот же самый):
+
+$ git merge --no-ff newfeature
+Merge made by recursive.
+ 1 |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+$ git log --graph --oneline
+
+*   2126431 Merge branch 'newbranch'
+|\
+| * 0dc5549 C
+| * 704bfaa B
+|/
+* ca62712 A
+
+Текст комментария "сливающего" коммита можно менять:
+
+$ git merge --no-ff newbranch -m "Слияние с фичей f333"
 
