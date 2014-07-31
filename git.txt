@@ -1,0 +1,651 @@
+Статус репозитория
+-----
+
+Можно смотреть так: git status -s -b (сокращенный формат с информацией о бранчах).
+Если нужен вывод в простом формате для скриптов git status -s -b --porcelain
+
+Можно посмотреть историю коммитов в виде дерева:
+
+$ git log --graph --oneline
+
+Удалить файл, в том числе и из рабочего каталога
+------------
+
+git rm --cached
+
+HEAD^ vs HEAD~
+--------------
+
+
+
+diff
+----
+
+git diff - показывает разницу между рабочим деревом и индексом. По-сути показывает, что мы добавим в индекс,
+если выполним git add.
+
+git diff --cached [<commit>] - показывает разницу между индексом и коммитом <commit>. По-умолчанию производит
+сравнение с HEAD.
+
+Ветки
+-----
+
+git branch - показывает список локальных веток.
+
+git branch <new branch> <old branch> - создает копию ветки, или отцепляет ветку от ветки. Если не указать
+<old branch>, то отцепляет от мастера.
+
+git branch -d <branch> - удаляет бранч, все изменения должны быть смержены с текущей апстримной веткой.
+
+git branch -D <branch> - удаляет бранч независимо от статуса мержинга.
+
+git branch -r - показывает список удаленных веток.
+
+git branch -a - показывает полный список веток.
+
+git merge <branch1> <branch2>... мержит бранчи <branch1>, <branch2> и т.д. В ТЕКУЩИЙ бранч.
+
+git merge -s - задает стратегии
+ - ours -
+
+git merge <msg> HEAD <commit>... - мержит коммиты с номерами из других бранчей в HEAD нашего бранча.
+(Мерж всегда происходит в ТЕКУЩИЙ бранч).
+
+Если при слиянии возникла ошибка, то нужно 
+ - ее исправить, разрулив зависимости вручную.
+ - сделать git add ....
+ - можно коммитить.
+
+Чтобы не создавать отдельный коммит:
+
+git merge --abort - задает отказ от слияния. Но не все слияния можно отменить подобный образом.
+
+Если при выполнении попытки слияния в итоге решили откатить изменения, то нужно сделать так:
+
+$ git reset
+$ git checkout .
+
+Переключения
+------------
+
+git checkout <branch> - переключает на бранч.
+
+git checkout HEAD~1 - переключает на предыдущий коммит. GIT переходит в отцепленное состояние, написано, что можно
+комитить тестировать и не создавать явно ветку. Я так понимаю, git создает какую-то внутреннюю ветку?
+
+git checkout -- filename - откатывает файл. Перед -- можно указать ветку, тег, удаленную ветку, номер ревизии,
+HEAD, HEAD^
+
+
+Если в текущей ветке были какие-то изменения по сравнению с последним коммитом в
+ветке(HEAD), то команда откажется производить переключение, дабы не потерять
+произведенную работу. Проигнорировать этот факт позволяет ключ -f:
+
+checkout -f some-other-branch
+
+В случае, когда изменения надо все же сохранить, используют ключ -m. Тогда команда
+перед переключением попробует залить изменения в текущую ветку и, после
+разрешения возможных конфликтов, переключиться в новую:
+
+checkout -m some-other-branch
+
+
+Сбор изменений во временную ветку (stash, припрятать)
+------------------------------------------------------
+
+git stash - сохраняет все изменения по сравнению с последним коммитом во временной ветке и сбрасывает состояние
+кода до исходного. Такие "заначки" нумеруются и их может быть несколько. 
+
+Посмотреть список "заначек":
+git stash list
+
+Есть еще git stash pop
+
+git stash apply - производит слияние ветки stash в текущую ветку.
+ 
+
+Удаленные репозитории
+---------------------
+Понятие "чистого" (bare) репозитория - репозитория, который не может быть рабочей копией, а служит только в качестве
+origin'а для синхронизации работы пользователей. В такие репозитории разрешено выполнение команды push. При этом
+каталог должен содержать только директорию .git.
+
+Переключение в bare-режим:
+
+$ git config --bool core.bare true
+
+Немного о клонировании, если просто указать путь к репозиторию, то склонируется текущая ветка в данном репозитории
+(либо та ветка, после переключения на которую репозиторий стал "чистым", см. .git/head: ref: refs/heads/branch3)
+
+git clone C:\Work\AT\gitdemo\origin\project\.git
+в .git/config будет так:
+
+[branch "branch2"]
+	remote = origin
+	merge = refs/heads/branch2
+
+Возможно повторяюсь: показать список всех бранчей локальных и удаленных:
+
+$ git branch -a
+* branch2
+  remotes/origin/HEAD -> origin/branch2
+  remotes/origin/branch1
+  remotes/origin/branch2
+  remotes/origin/master
+
+(бранчи origin/branch1, origin/master не чекаутились, они существуют только в удаленном репозитории).
+
+Посмотреть только удаленные бранчи:
+
+$ git branch -r
+  origin/HEAD -> origin/branch2
+  origin/branch1
+  origin/branch2
+  origin/master
+
+Если в удаленный оригинальный репозиторий добавляют бранч, то сразу git branch -r его не показывает.
+Необходимо обновить информацию об удаленном репозитории, для этого сделать
+
+$ git pull
+
+remote: Counting objects: 5, done.
+remote: Total 3 (delta 0), reused 0 (delta 0)
+Unpacking objects: 100% (3/3), done.
+From C:\Work\AT\gitdemo\origin\project\
+ * [new branch]      branch3    -> origin/branch3
+Already up-to-date.
+
+Теперь можно сделать так:
+
+$ git branch -r
+  origin/HEAD -> origin/branch2
+  origin/branch1
+  origin/branch2
+  origin/branch3
+  origin/master
+
+
+По-умолчанию включается трекинг удаленных бранчей, имеющихся в оригинальном репозитории.
+Что такое трекинг? Configure their local repository to correctly track changes in the new v0 branch. For example, when the
+users are on the new local v0 branch, The user can type git fetch, git pull, and git push without specifying the origin 
+remote and v0 branch with every command.
+
+При переключении на треканутый бранч, на который мы еще никогда в своей локальной копии не переключались
+выводится следующее:
+
+$ git checkout branch3
+Branch branch3 set up to track remote branch branch3 from origin.
+Switched to a new branch 'branch3'
+
+(но данное поведение работает только если помимо origin'а не подключены другие удаленные репозитории, содержащие
+бранч, о котором git знает и из них не выполнен git pull)
+
+Раньше нужно было делать так:
+
+$ git checkout -t origin/branch2 -b branch2
+Branch branch2 set up to track remote branch branch2 from origin.
+Switched to a new branch 'branch2'
+
+В принципе сейчас тоже так можно делать, если ориджинов несколько.
+
+Если сделать так:
+$ git checkout --track -b refactored 
+
+то трекаться будет локальная ветка, из которой была выполнена данная команда.
+
+Еще момент. Если мой бранч впереди на несколько коммитов бранча-ориджина, то при переключении на него выводится:
+
+$ git checkout branch3
+Switched to branch 'branch3'
+Your branch is ahead (впереди) of 'origin/branch3' by 3 commits.
+
+Если сделать так: git checkout -b branch3 то трекинг не подключится.
+
+Если бранч не трекится, то его нужно настроить. Т.е. если, например, сначала мы создали бранч v0 у себя,
+потом он появился в origin'е, а потом мы захотели трекить origin. Или подключить другой удаленный репозиторий
+и трекать из него.
+
+- В Git до 1.7:
+$ git config branch.v0.remote pavel
+$ git config branch.v0.merge refs/heads/v0
+
+- В Git 1.7
+$ git branch --set-upstream v0 pavel/v0
+
+- В Git 1.8
+$ git branch -u upstream/foo
+(выполняется из того бранча, который мы хотим заставить трекать)
+От git checkout -b branch --track ... данные команды отличаются тем, что их можно использовать когда бранчи
+уже были созданы.
+
+------------
+
+git fetch - скачивает объекты и ссылки с другого репозитория (но я так понимаю не применяет их)
+
+Подключить удаленный репозиторий:
+
+git remote add origin git@github.com:caius/foo.git
+т.е git remote add <name> <path>, Где <name> - назначаемое имя
+
+git push origin master
+т.е. git push <repo> <branch>
+
+Накат изменений из удаленного репозитория:
+
+# git pull origin master 
+will pull changes from the origin remote, master branch and merge them to the local checked-out branch.
+
+# git pull origin/master 
+will pull changes from the locally stored branch origin/master and merge that to the local checked-out branch. 
+The origin/master branch is essentially a "cached copy" of what was last pulled from origin, which is why it's called 
+a remote branch in git parlance. This might be somewhat confusing.
+
+вот еще важно: git merge (and therefore git pull) always merges into the current branch. To merge with something other 
+than your current branch, just check it out first.
+
+комментарии:
+- um .. I don't see how 'origin/master' is any different from 'origin master'; they're both the master branch on origin. 
+Can you actually give an example of when they would be different?
+	
+- @hasen Try doing a "pull origin master" when you are disconnected from the network. Then try "merge origin/master" 
+(you can't pull, since it's not a remote). One works, because it's local, and one doesn't.
+	
+git pull origin/master may have been a valid command when this was written, but nowadays (git 1.7.10.3) it fails with fatal:
+'origin/master' does not appear to be a git repository (as it should - pull is always for pulling from remotes).
+
+Обновить репозиторий рекурсивно с подмодулями:
+
+# git pull --recurse-submodules
+# git submodule update
+
+(плотно не разбирался, но вторая команда помогает навести порядок с указателями на подмодули, поэтому ее выполнять
+обязательно, подробности см. http://git-scm.com/book/ru/%D0%98%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D1%8B-Git-%D0%9F%D0%BE%D0%B4%D0%BC%D0%BE%D0%B4%D1%83%D0%BB%D0%B8)
+
+Detached header mode
+--------------------
+$ git checkout origin/master
+выбирает мастер из origin и сливает его с текущей веткой, результат при этом помещая в отдельную временную ветку
+без названия. После работы в такой временной ветке результат можно залить в постоянную ветку с помощью
+
+$ git checkout -b mybranch
+
+Коммит с picked-cherry
+----------------------
+
+Откатить коммит
+---------------
+
+git reset --soft HEAD^
+edit
+git add ...
+git commit -c ORIG_HEAD - "reset" copies the old head to .git/ORIG_HEAD; redo the commit by starting with its log message.
+If you do not need to edit the message further, you can give -C option instead.
+(Можно закоммитить как обычно - с -m "Новый текст коммита", но если хочется отредактировать коммит и восстановить
+его со старым текстом, то можно воспользоваться -c ORIG_HEAD, если сделать -c HEAD, то продублируется текст коммита,
+который сейчас в топе (т.е. непосредственно расположенного перед откаченным), если -c HEAD~1 - на 2 позиции от откаченного
+и т.д. Важно -С копирует и текст коммита, и информацию об авторе и даже дату коммита, -c - тоже копирует информацию
+о коммите, но запускает редактор, позволяя изменить тест коммита, точнее - дополнить.)
+
+Можно удалить коммит навсегда:
+
+git reset --hard HEAD~1
+(правда помимо удаления коммита еще и чистит рабочий каталог от изменений, жестко переключая на состояние до коммита).
+
+отменить коммит, но сохранить свои изменения - git reset без указания --soft/--hard (не совсем понял,
+вроде это - удаление из STAGE. Да, так, если мы добавили что-то в стейдж, а потом не хотим это коммитить, то очистить
+стейж можно с помощью git reset. Можно удалить отдельный файл из стейджа: git reset .gitignore. Если сделать
+git reset HEAD~1, то в unstaged вытягиваются все файлы, измененные в предыдущем коммите, соответствующие коммиты
+при этом удаляются из git log. Изменения в рабочей копии при этом сохраняются
+
+git reset --soft отличается от git reset тем, что выталкивает файл из коммита в stage, в то время как git reset выталкивает
+файл и из коммита, и из stage, при этом ORIG_HEAD и операции с ним так же доступны).
+
+Reset при слиянии
+
+Если в процессе разрешения вы передумали разрешать
+конфликт, достаточно набрать:
+
+git reset --hard HEAD - это вернет обе ветки в исходные состояния.
+
+
+Если же коммит слияния был совершен, используем команду:
+
+git reset --hard ORIG_HEAD
+
+отменить коммит, но сохранить свои файлы и индекс - git reset --soft.
+
+Пуш после отката коммита:
+
+
+
+$ git revert - отмена изменений, внесенных в прошлом отдельным коммитом.
+Отличия от git reset в том, что можно откатить изменения, внесенные каким-либо коммитом посередине.
+По-умолчанию изменения из средины уничтожаются, происходит мержинг и автоматически новый коммит с комментарием
+
+
+Revert "СООБЩЕНИЕ ИЗ ОТКАЧЕННОГО КОММИТА"
+
+This reverts commit 3d4f154900af952cc70969a9369af4220da3ce08.
+
+Вообще при выполнении реверта всплывает редактор, так же можно использовать ключ -e (хотя под Windows редактор всплывает
+и без данного ключа).
+
+Если запустить
+
+$ git revert -n - автоматического коммита не произойдет, результат мержинга будет занесен в индекс.
+
+Так же в отличие от git reset не происходит удаление коммита из истории. Просто мы захотели сделать специальный
+мерж верхушки с инверсией изменений, внесенных на каком-либо этапе.
+
+При попытке сдедать revert возможен конфликт:
+
+<<<<<<< HEAD
+i added on the first commit
+i added on the second commit
+i added on the third commit
+=======
+i added on the first commit
+>>>>>>> parent of 73370f2... Second commit
+
+Необходимо вручную исправить конфликт и сделать коммит.
+
+$ git add <file>
+
+а затем коммит.
+
+Важно! Нельзя откатывать корневой коммит. Да и вообще по большому счету безопасно можно откатить только верхний коммит
+в дереве.
+
+Еще есть git checkout -b someNewBranchName shaYouDestroyed - создать бранч и зачекаутиться.
+
+git add . vs git commit -a
+--------------------------
+
+Даже измененные файлы должны быть "добавлены" в stage. Добавить в stage измененные и удаленные файлы
+можно одновременно с коммитом с помощью git commit -a, но! НОВЫЕ ФАЙЛЫ НЕ ДОБАВЛЯЮТСЯ, данное действие захватывает
+только т.н. tracked файлы.
+
+Все изменения (включая новые файлы) можно добавить в stage с помощью git add .
+
+Просмотреть статус репозитория можно с помощью git status.
+
+Замечание: git add . не всегда помогает, иногда приходится делать git commit -a (здесь не разобрался почему, ведь у 
+git add больший охват, скорее всего я просто что-то напутал).
+
+Прикол staging area в том, что после добавления файла в нее мы можем его редактировать, но в коммит попадет файл
+по состоянию на момент добавления в стейдж.
+
+Еще про git add -n - не добавлять файлы, а просто показать какие существуют, а какие будут проигнорированы.
+                -f - добавить и игнорируемые файлы
+                -i - interactive mode 
+                -p (--patch) - позволяет выбрать патч между рабочей копией и индексом. Позволяет пользователю посмотреть
+                               difference между добавляемыми в индекс контентами.
+
+                               Патч делается только по уже трекед файлам. Если добавить новый файл и запросить патч для него,
+                               то говорит nochanges.
+
+                               Если отредактировать патч, то файл в рабочей копии не меняется, а вот в индекс добавляется
+                               результат применения отредактированного патча. Неизмененный файл в рабочей копии
+                               оказывается unstaged.
+
+                -e (--edit) - открывает diff в редакторе и позволяет пользователю изменить его. После того как редактор
+                              закрывают применяет патч к индексу. 
+                              The intent of this option is to pick and choose lines of the patch to apply, or even to modify 
+                              the contents of lines to be staged. This can be quicker and more flexible than using the 
+                              interactive hunk selector. However, it is easy to confuse oneself and create a patch that 
+                              does not apply to the index. See EDITING PATCHES below.
+
+                              Редактировать позволяет только уже оттрекенные файлы, для новых файлов ничего не показывает.
+                              Поведение при сохренении аналогично изменению при -p
+
+
+                -u - добавляет изменения только для tracked-файлов. Не будет стейджить новые файлы, только добавит изменения
+                     в модифицированных файлах и удалит из индекса удаленные из рабочей копии файлы.
+
+                -a - будет искать файлы в рабочей директории как и в индексе. Я так понимаю данный режим включен 
+                     по-умолчанию.
+
+                --intent-to-add - Record only the fact that the path will be added later. An entry for the path is placed 
+                                  in the index with no content. This is useful for, among other things, showing the unstaged 
+                                  content of such files with git diff and committing them with git commit -a.
+
+                --refresh - Don't add the file(s), but only refresh their stat() information in the index.
+
+                --ignore-errors - If some files could not be added because of errors indexing them, do not abort the 
+                                  operation, but continue adding the others. The command shall still exit with non-zero 
+                                  status.
+
+                --ignore-missing - This option can only be used together with --dry-run. By using this option the user can 
+                                   check if any of the given files would be ignored, no matter if they are already present 
+                                   in the work tree or not.
+
+Частичные изменения в stage можно откатывать с помощью reset HEAD^.
+
+Добавить забытые изменения в последний коммит
+---------------------------------------------
+
+git commit --amend
+
+Аналог следующего:
+
+$ git reset --soft HEAD^
+$ ... do something else to come up with the right tree ...
+$ git commit -c ORIG_HEAD
+
+Можно задать свой текст коммита через -m, т.е. по сути мы мержим внесенные ("забытые") изменения с предыдущим коммитом.
+При этом автор и дата коммита останутся без изменений, хотя их можно и поменять с помощью --date, --author.
+
+Добавить файлы в коммит
+-----------------------
+
+Можно делать так: git commit -i добавляет выбранный файлы в индекс для коммита.
+
+Закоммитить только выбранные файлы
+----------------------------------
+
+Можно как в SVN закоммитить только выбранные файлы:
+
+git commit -o file1 file2 
+(файлы можно выбирать только из индекса)
+
+Очистить рабочий каталог
+------------------------
+
+git clean -xdf
+
+Очистить рабочий каталог, удалив ненаходящиеся под управлением git файлы, каталоги (-d), и файлы, игнорируемые
+git (-x)
+
+Еще про откат изменений
+-----------------------
+
+Если хочется откатить изменения в локальной рабочей директории, то:
+
+git checkout . (логично же, т.к. выше описан откат файла - имя файла вместо точки)
+
+Если хочется откатить изменения в индексе (stage), то:
+
+git reset
+
+Если хочется откатить закоммиченные изменения, то:
+
+git revert ...
+
+Ненужные изменения так же можно откатывать мержа вету без этих изменений на ветку с этими изменениями.
+
+При возникновении конфликта мержинг обрывается на какой-то точке.
+
+Гиту трудно обрабатывать неверный порядок в воркфлоу, например так:
+в мастере какие-то изменения есть, потом есть, потом убираем.
+Пока они были мы отцепляем ветку А. Соответственно они продолжают жить в ветке А.
+После удаления изменений мы отцепляем ветку В. Соответственно их нет в ветке В.
+Если потом мы будем мержить А на В, то эти изменения не будут увидены, т.к. они считаются "забитыми" что-ли в ветке B.
+Кажется понял. Мержется в ГИТ не текущее состояние, а все коммиты, которые были сделаны в другой ветке, при этом учитывается.
+время этих коммитов. Т.е. 
+
+до мержа было так:
+
+commit 1
+4.10.2012 19:01
+
+commit 2
+4.10.2012 19:09
+
+commit 3
+5.10.2012 14:03
+
+после мержа:
+
+commit 1
+4.10.2012 19:01
+
+commit 2    
+4.10.2012 19:09
+
+commit ~1
+4.10.2012 20:55
+
+commit ~2
+5.10.2012 12:42
+
+commit 3
+5.10.2012 14:03  <!-- вот его хочу исключить
+
+commit ~3
+5.10.2012 17:14:12
+
+commit ~4
+5.10.2012 18:09:25
+
+Советы что делать (на примере A B C D, хотим исключить B и C как я понял)
+
+а) использовать rebase: git rebase -i HEAD~5 (rebase -i - интерактивный режим, --onto to pretend that you forked the topic 
+branch from the latter branch, using rebase --onto. короче говоря --onto HEAD/branch - куда поместить обновление)
+В интерактивном режиме появится список коммитов и нужно будет отметить какие применить, какие похерить, какие изменить.
+но очень опасно может убить некоторые коммиты... Если есть конфликты, то нужно исправить и вызвать
+git add ... затем git rebase --continue, там где-то нужно указать -m, иначе заставит вводить текст коммита.
+HEAD~5 здесь как я понял - коммит ЗА тем (т.е. раньше того), который мы пропускаем.
+
+б) больше ручной работы:
+   # detach head and move to D commit
+   git checkout <SHA1-for-D>
+
+   # move HEAD to A, but leave the index and working tree as for D
+   git reset --soft <SHA1-for-A>
+
+   # Redo the D commit re-using the commit message, but now on top of A
+   git commit -C <SHA1-for-D>
+
+   # Re-apply everything from the old D onwards onto this new place 
+   git rebase --onto HEAD <SHA1-for-D> master
+
+Если после удаления коммита смержиться с веткой, в которой данный коммит есть, то коммит применится.
+
+---------------------------------
+
+Пример Git Workflow:
+
+Как работаю с git я? У меня всегда чистый мастер, который соответсвует, или немного отстает от origin/master 
+или upstream/master.
+
+1. забираем изменения со всех вышестощих репозиториев
+git fetch --all
+2. чекаутимся на origin/master и создаем новую ветку.
+git checkout origin/master -b MY-SUPER-FEATURE --no-track (?)
+3. работаем с кодом
+4. коммитим изменения, если фича еще не реализована, возвр. на пункт 3.
+git add .
+git commit -a -m "my supper commit"
+5. чекаутимся на мастер
+git checkout master
+6. обновляем мастер
+git pull origin master
+7. мерджим наши изменения в мастер (--no-ff -принудительно создать мердж, для того, чтобы было видно, где началась и 
+закончилась фича)
+git merge MY-SUPER-FEATURE --no-ff
+8. проталкиваем изменения вверх (:master, если ветки совпадают можно опустить)
+git push origin master:master
+
+Если вы работает, через pull request, то workflow немного изменится: нужно ветку делать от upstream/master и, 
+вместо 5-8 пункта нужно делать:
+git push origin MY-SUPER-FEATURE:MY-SUPER-FEATURE
+
+Затем, тот, кто будет рассматривать ваш реквест будет делать примерно следующее.
+git remote add your-nick your-repo-url (если ваш ремоут еще не был добавлен)
+git fetch --all
+git checkout master
+git pull origin master
+git merge remotes/your-nick/MY-SUPER-FEATURE --no-ff
+git push origin master:master
+
+Про -ff: --ff 
+When the merge resolves as a fast-forward, only update the branch pointer, without creating a merge commit. This is the 
+default behavior.
+ --no-ff 
+Create a merge commit even when the merge resolves as a fast-forward. 
+--ff-only 
+Refuse to merge and exit with a non-zero status unless the current HEAD is already up-to-date or the merge can be 
+resolved as a fast-forward.
+
+--------------------------------------
+
+git под Windows
+
+чтобы кодировка в тексте коммитов нормально воспринималась, а затем выводилась в git log:
+
+git config --global i18n.logoutputencoding cp866
+
+git config --global i18n.commitencoding cp1251
+
+чтобы русский текст в именах файлов не крешился:
+
+git config --global core.quotepath false
+
+чтобы русский текст в файлах (в кодировке cp1251) корректно выводился в git diff:
+
+pager = iconv.exe -f cp1251 -t utf-8 | less
+
+(нужно поставить iconv, подробнее см. http://habrahabr.ru/post/74839/)
+
+
+Перемотка (fast-forward)
+------------------------
+
+Проблемы слияния (merge)
+------------------------
+
+В отличие от SVN проблемы слияния возникают не только, когда мы меняем одни и те же строки в незакоммиченной рабочей
+копии, а кто-то другой поменял эти же строки и закоммитил в репозиторий. В Git у нас есть еще и ветки. И если
+при изменении файла в одной ветке в одном репозитории и изменении этих же строк в этой же ветке в другом репозитории,
+слияние происходит нормально, то при накате другой ветке эта же ситуация приводит к ошибке.
+
+Репозиторий Andry
+
+$ git checkout branch3
+$ отредактировали файл
+$ git commit -a -m "..."
+$ git push
+
+Репозиторий Alex
+
+$ git checkout branch3
+$ git pull
+
+все ок, мерж проходит.
+
+Теперь пытаемся сделать мерж из другой ветки:
+
+Репозиторий Alex
+
+$git checkout branch3
+$git pull pavel v0 (из ветки v0 в ветку branch3!!!)
+ошибка слияния!
+
+Интересно, что после произведения слияния с новой веткой изменения из нее применяются так же как и изменения из
+собственной ветки, т.е. конфликта не возникает. Даже если удаленную ветку смержить с какой-нибудь другой, то
+потом с ней мерж все равно нормально проходит.
+
+Думаю, что данное поведение как-то коррелирует с fast-forward, по крайней мере, если затем, после мержинга в мою ветку
+внести изменения, закоммитить, а потом попробовать ее смержить с уже известной ей удаленной - так же происходит конфликт.
+Дерево разрывается и нужно снова мержить вручную.
+
