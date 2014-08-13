@@ -30,6 +30,11 @@ $ git rm --cached
 $ git rm 
 (для каталогов добавляем -r - рекурсивно)
 
+Важно! При выполнении git add ... удаленные файлы не попадают в индекс, соответственно по коммиту их удаление не происходит.
+Необходимо выполнять коммит с ключем a:
+
+$ git commit -am "..."
+
 HEAD^ vs HEAD~
 --------------
 
@@ -581,6 +586,13 @@ git add больший охват, скорее всего я просто что-то напутал).
                 --ignore-missing - This option can only be used together with --dry-run. By using this option the user can 
                                    check if any of the given files would be ignored, no matter if they are already present 
                                    in the work tree or not.
+
+Важно! Удаленные файлы не попадают в индекс при выполнении git add . Чтобы по коммиту были удалены из репозитория
+удаленные из рабочей копии файлы необходимо выполнять коммит с ключом -a:
+
+$ git commit -am "..."
+
+Так что выполнение git add не всегда избавляет от необходимости в git commit -a.
 
 Частичные изменения в stage можно откатывать с помощью reset HEAD^.
 
